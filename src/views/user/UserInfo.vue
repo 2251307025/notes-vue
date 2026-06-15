@@ -3,6 +3,7 @@ import { ref } from 'vue'
 import {useUserInfoStore} from "@/stores/userInfo.js";
 const userInfoStore=useUserInfoStore()
 const userInfo = ref({...userInfoStore.info})
+const formRef = ref(null)
 const rules = {
   nickname: [
     { required: true, message: '请输入用户昵称', trigger: 'blur' },
@@ -21,6 +22,8 @@ const rules = {
 import {userInfoService, userInfoUpdateService} from "@/api/user.js";
 import {ElMessage} from "element-plus";
 const updateUserInfo=async () => {
+  if (!formRef.value) return
+  await formRef.value.validate()
   let result = await userInfoUpdateService(userInfo.value)
   ElMessage.success(result.msg? result.msg:'修改成功')
     //将数据存储到pini中
@@ -37,7 +40,7 @@ const updateUserInfo=async () => {
     </template>
     <el-row>
       <el-col :span="12">
-        <el-form :model="userInfo" :rules="rules" label-width="100px" size="large">
+        <el-form :model="userInfo" :rules="rules" ref="formRef" label-width="100px" size="large">
           <el-form-item label="登录名称">
             <el-input v-model="userInfo.username" disabled></el-input>
           </el-form-item>

@@ -8,7 +8,7 @@ const userInfoStore=useUserInfoStore();
 import {useTokenStore} from "@/stores/token.js";
 const tokenStore=useTokenStore();
 //用户头像地址
-const imgUrl= ref(userInfoStore)
+const imgUrl= ref(userInfoStore.info.userPic)
 //上传成功
 const uploadSuccess=(result)=>{
   imgUrl.value=result.data
@@ -44,7 +44,7 @@ const updateAvatar=async () => {
             :on-success="uploadSuccess"
             :headers="{'Authorization':tokenStore.token}"
         >
-          <img v-if="imgUrl.info.userPic" :src="imgUrl.info.userPic" class="avatar" />
+          <img v-if="imgUrl" :src="imgUrl" class="avatar" />
           <img v-else :src="avatar" width="278" />
         </el-upload>
         <br />
