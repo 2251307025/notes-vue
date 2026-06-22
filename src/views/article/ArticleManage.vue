@@ -35,6 +35,7 @@ import {
   articleDeleteService,
   articleListService, articleUpdateService
 } from '@/api/artcle.js'
+import { generateImage } from '@/api/chat.js'
 //回显文章分类
 const articleCategoryList = async () => {
   let result = await articleCategoryListService()
@@ -172,6 +173,28 @@ const  addArticle=async (clickState) => {
  ElMessage.success(result.msg? result.msg:'添加成功')
   visibleDrawer.value=false
    await resetAndLoad()
+}
+
+// 生成封面图片
+const generatingImage = ref(false)
+const handleGenerateImage = async () => {
+  const content = articleModel.value.content
+  // 去除HTML标签后判断长度
+  const plainText = content.replace(/<[^>]+>/g, '').trim()
+  if (plainText.length < 5) {
+    ElMessage.warning('文章内容至少需要5个文字才能生成封面')
+    return
+  }
+  generatingImage.value = true
+  try {
+    const imageUrl = await generateImage(plainText)
+    articleModel.value.coverImg = imageUrl.data || imageUrl
+    ElMessage.success('封面生成成功')
+  } catch (e) {
+    ElMessage.error('封面生成失败')
+  } finally {
+    generatingImage.value = false
+  }
 }
 //删除文章
 const deleteArticle =(row)=>{
@@ -322,18 +345,22 @@ const handleCardClick = (article) => {
         </el-select>
       </el-form-item>
       <el-form-item label="文章封面">
-
-        <el-upload class="avatar-uploader" :auto-upload="true" :show-file-list="false"
-                   action="/api/upload"
-                   name="file"
-                   :headers="{'Authorization':tokenStore.token}"
-                   :on-success="uploadSuccess"
-        >
-          <img v-if="articleModel.coverImg" :src="articleModel.coverImg" class="avatar"/>
-          <el-icon v-else class="avatar-uploader-icon">
-            <Plus/>
-          </el-icon>
-        </el-upload>
+        <div class="cover-actions">
+          <el-upload class="avatar-uploader" :auto-upload="true" :show-file-list="false"
+                     action="/api/upload"
+                     name="file"
+                     :headers="{'Authorization':tokenStore.token}"
+                     :on-success="uploadSuccess"
+          >
+            <img v-if="articleModel.coverImg" :src="articleModel.coverImg" class="avatar"/>
+            <el-icon v-else class="avatar-uploader-icon">
+              <Plus/>
+            </el-icon>
+          </el-upload>
+          <el-button type="primary" :loading="generatingImage" @click="handleGenerateImage" style="margin-left: 12px;">
+            AI生成封面
+          </el-button>
+        </div>
       </el-form-item>
       <el-form-item label="文章内容">
         <div class="editor">
@@ -560,6 +587,11 @@ const handleCardClick = (article) => {
       text-align: center;
     }
   }
+}
+
+.cover-actions {
+  display: flex;
+  align-items: flex-end;
 }
 
 .editor {

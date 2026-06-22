@@ -4,6 +4,9 @@ import request from '@/util/request.js'
 
 export const deleteMemory = () => request.delete('/chat')
 
+// 根据提示词生成图片
+export const generateImage = (prompt) => request.post('/chat/image', { userInput: prompt })
+
 export function sendChatMessage(userInput, { onMessage, onError, onClose, onOpen }) {
   const tokenStore = useTokenStore()
 
