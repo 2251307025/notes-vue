@@ -6,7 +6,7 @@ import {
 
 import {ref, watch, onMounted, onUnmounted} from 'vue'
 
-//文章分类数据模型
+//笔记分类数据模型
 const categorys = ref([])
 
 //用户搜索时选中的分类id
@@ -15,13 +15,13 @@ const categoryId = ref('')
 //用户搜索时选中的发布状态
 const state = ref('')
 
-//文章列表数据模型
+//笔记列表数据模型
 const articles = ref([])
 
 //无限滚动状态
 const loading = ref(false)        // 加载中
 const hasMore = ref(true)         // 是否还有更多
-const lastId = ref(null)          // 游标值（最后一条文章的id）
+const lastId = ref(null)          // 游标值（最后一条笔记的id）
 const isFirstLoad = ref(true)     // 是否首次加载
 const sentinelRef = ref(null)     // 底部哨兵元素引用
 
@@ -36,14 +36,14 @@ import {
   articleListService, articleUpdateService
 } from '@/api/artcle.js'
 import { generateImage } from '@/api/chat.js'
-//回显文章分类
+//回显笔记分类
 const articleCategoryList = async () => {
   let result = await articleCategoryListService()
   categorys.value = result.data
 }
 articleCategoryList()
 
-//解析文章分类名称
+//解析笔记分类名称
 const resolveCategoryName = (article) => {
   for (let j = 0; j < categorys.value.length; j++) {
     if (article.categoryId === categorys.value[j].id) {
@@ -53,7 +53,7 @@ const resolveCategoryName = (article) => {
   return ''
 }
 
-//加载文章列表（支持无限滚动）
+//加载笔记列表（支持无限滚动）
 const loadArticles = async () => {
   if (loading.value || !hasMore.value) return
   loading.value = true
@@ -182,7 +182,7 @@ const handleGenerateImage = async () => {
   // 去除HTML标签后判断长度
   const plainText = content.replace(/<[^>]+>/g, '').trim()
   if (plainText.length < 5) {
-    ElMessage.warning('文章内容至少需要5个文字才能生成封面')
+    ElMessage.warning('笔记内容至少需要5个文字才能生成封面')
     return
   }
   generatingImage.value = true
@@ -196,7 +196,7 @@ const handleGenerateImage = async () => {
     generatingImage.value = false
   }
 }
-//删除文章
+//删除笔记
 const deleteArticle =(row)=>{
   ElMessageBox.confirm(
       '确定删除?',
@@ -229,7 +229,7 @@ const updateArticle=async (clickState) => {
   await resetAndLoad()
   visibleDrawer.value=false;
 }
-//文章数据回调
+//笔记数据回调
 const showArticle=(row)=>{
   articleModel.value.title=row.title;
   articleModel.value.coverImg=row.coverImg;
@@ -247,15 +247,15 @@ const handleCardClick = (article) => {
   <el-card class="page-container">
     <template #header>
       <div class="header">
-        <span>文章管理</span>
+        <span>笔记管理</span>
         <div class="extra">
-          <el-button type="primary" @click="visibleDrawer=true;title='添加文章';clearArticleModel()">添加文章</el-button>
+          <el-button type="primary" @click="visibleDrawer=true;title='添加笔记';clearArticleModel()">添加笔记</el-button>
         </div>
       </div>
     </template>
     <!-- 搜索表单 -->
     <el-form inline class="demo-form-inline">
-      <el-form-item label="文章分类：">
+      <el-form-item label="笔记分类：">
         <el-select placeholder="请选择" v-model="categoryId">
           <el-option
               v-for="c in categorys"
@@ -278,7 +278,7 @@ const handleCardClick = (article) => {
       </el-form-item>
     </el-form>
 
-    <!-- 文章网格（3列无限滚动） -->
+    <!-- 笔记网格（3列无限滚动） -->
     <div class="article-grid">
       <div v-for="article in articles" :key="article.id" class="article-card"
            :style="{ backgroundImage: article.coverImg ? `url(${article.coverImg})` : 'none' }"
@@ -295,7 +295,7 @@ const handleCardClick = (article) => {
             <span class="card-meta">{{ article.createTime.slice(0, 10) }}</span>
             <div class="card-actions">
               <el-button :icon="Edit" circle plain type="primary" size="small"
-                         @click.stop="visibleDrawer=true;title='编辑文章';showArticle(article)"></el-button>
+                         @click.stop="visibleDrawer=true;title='编辑笔记';showArticle(article)"></el-button>
               <el-button :icon="Delete" circle plain type="danger" size="small"
                          @click.stop="deleteArticle(article)"></el-button>
             </div>
@@ -329,22 +329,22 @@ const handleCardClick = (article) => {
       <div ref="sentinelRef" style="height: 1px"></div>
 
       <!-- 空状态 -->
-      <el-empty v-if="!loading && articles.length === 0" description="暂无文章"/>
+      <el-empty v-if="!loading && articles.length === 0" description="暂无笔记"/>
     </div>
   </el-card>
   <el-drawer v-model="visibleDrawer" :title=title  direction="rtl" size="50%">
-    <!-- 添加文章表单 -->
+    <!-- 添加笔记表单 -->
     <el-form :model="articleModel" label-width="100px">
-      <el-form-item label="文章标题">
+      <el-form-item label="笔记标题">
         <el-input v-model="articleModel.title" placeholder="请输入标题"></el-input>
       </el-form-item>
-      <el-form-item label="文章分类">
+      <el-form-item label="笔记分类">
         <el-select placeholder="请选择" v-model="articleModel.categoryId">
           <el-option v-for="c in categorys" :key="c.id" :label="c.categoryName" :value="c.id">
           </el-option>
         </el-select>
       </el-form-item>
-      <el-form-item label="文章封面">
+      <el-form-item label="笔记封面">
         <div class="cover-actions">
           <el-upload class="avatar-uploader" :auto-upload="true" :show-file-list="false"
                      action="/api/upload"
@@ -362,7 +362,7 @@ const handleCardClick = (article) => {
           </el-button>
         </div>
       </el-form-item>
-      <el-form-item label="文章内容">
+      <el-form-item label="笔记内容">
         <div class="editor">
           <quill-editor v-if="visibleDrawer"
               theme="snow"
@@ -373,13 +373,13 @@ const handleCardClick = (article) => {
         </div>
       </el-form-item>
       <el-form-item>
-        <el-button type="primary" @click="title==='添加文章'? addArticle('已发布'):updateArticle('已发布')">发布</el-button>
-        <el-button type="info" @click="title==='添加文章'? addArticle('草稿'):updateArticle('草稿')">草稿</el-button>
+        <el-button type="primary" @click="title==='添加笔记'? addArticle('已发布'):updateArticle('已发布')">发布</el-button>
+        <el-button type="info" @click="title==='添加笔记'? addArticle('草稿'):updateArticle('草稿')">草稿</el-button>
       </el-form-item>
     </el-form>
   </el-drawer>
-  <!-- 查看文章抽屉 -->
-  <el-drawer v-model="viewDrawerVisible" :title="viewingArticle?.title || '查看文章'" direction="rtl" size="50%">
+  <!-- 查看笔记抽屉 -->
+  <el-drawer v-model="viewDrawerVisible" :title="viewingArticle?.title || '查看笔记'" direction="rtl" size="50%">
     <div v-if="viewingArticle" class="view-article">
       <div class="view-cover" v-if="viewingArticle.coverImg">
         <img :src="viewingArticle.coverImg" alt="封面"/>

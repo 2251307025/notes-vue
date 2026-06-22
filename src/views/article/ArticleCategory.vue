@@ -97,7 +97,7 @@ const deleteCategory =(row)=>{
   <el-card class="page-container">
     <template #header>
       <div class="header">
-        <span>文章分类</span>
+        <span>笔记分类</span>
         <div class="extra">
           <el-button type="primary" @click="clearCategoryModel()">添加分类</el-button>
         </div>

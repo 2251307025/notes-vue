@@ -80,11 +80,11 @@ const handleCommand =(command)=>{
       >
         <el-menu-item index="/article/category">
           <el-icon><Management/></el-icon>
-          <span>文章分类</span>
+          <span>笔记分类</span>
         </el-menu-item>
         <el-menu-item index="/article/manage">
           <el-icon><Promotion/></el-icon>
-          <span>文章管理</span>
+          <span>笔记管理</span>
         </el-menu-item>
         <el-menu-item index="/ai/chat">
           <el-icon><ChatLineRound/></el-icon>

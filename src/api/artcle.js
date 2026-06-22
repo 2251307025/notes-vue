@@ -1,6 +1,6 @@
 import request from "@/util/request.js";
 import {useTokenStore} from "@/stores/token.js"
-//获得所有文章分类数据
+//获得所有笔记分类数据
 export const articleCategoryListService=()=>{
    // const tokenStore=useTokenStore();
     // return request.get('/category',{headers:{'Authorization':tokenStore.token}})
@@ -18,19 +18,19 @@ export const articleCategoryUpdateService=(categoryData)=>{
 export const articleCategoryDeleteService=(id)=>{
    return  request.delete('/category?id='+id)
 }
-//文章列表查询
+//笔记列表查询
 export const articleListService=(params)=>{
   return  request.get('/article',{params: params})
 }
-//添加文章
+//添加笔记
 export const articleAddService=(articleData)=>{
   return   request.post('/article',articleData);
 }
-//删除文章
+//删除笔记
 export const articleDeleteService=(id)=>{
     return request.delete('/article?id='+id)
 }
-//更新文章
+//更新笔记
 export const articleUpdateService=(articleData)=>{
    return  request.put('/article',articleData)
 }
