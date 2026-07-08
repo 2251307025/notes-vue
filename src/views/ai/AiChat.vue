@@ -1,6 +1,6 @@
 <script setup>
 import { ref, nextTick, watch, onMounted } from 'vue'
-import { sendChatMessage, deleteMemory } from '@/api/chat.js'
+import { sendChatMessage, deleteMemory, getModels } from '@/api/chat.js'
 import { Delete, Promotion } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import MarkdownIt from 'markdown-it'
@@ -32,6 +32,9 @@ const isLoading = ref(false)
 const abortController = ref(null)
 const messagesRef = ref(null)
 
+const models = ref([])          // 可用模型列表
+const selectedModel = ref('')  // 当前选中的 modelId
+
 let isNearBottom = true
 
 function handleScroll() {
@@ -48,8 +51,26 @@ function scrollToBottom() {
   })
 }
 
+// 获取可用模型列表
+async function fetchModels() {
+  try {
+    const res = await getModels()
+    if (res?.data) {
+      models.value = res.data
+      // 默认选中第一个模型
+      if (res.data.length > 0) {
+        selectedModel.value = res.data[0].modelId
+      }
+    }
+  } catch (err) {
+    console.error('获取模型列表失败:', err)
+  }
+}
+
 // 从 localStorage 恢复历史
 onMounted(() => {
+  fetchModels()
+
   const saved = localStorage.getItem('aiChatHistory')
   if (saved) {
     try {
@@ -79,8 +100,10 @@ async function sendMessage() {
   isLoading.value = true
   scrollToBottom()
 
+  const currentModel = models.value.find(m => m.modelId === selectedModel.value)
+
   const idx = messages.value.length
-  messages.value.push({ role: 'assistant', content: '' })
+  messages.value.push({ role: 'assistant', content: '', modelName: currentModel ? currentModel.modelName : '' })
 
   abortController.value = sendChatMessage(text, {
     onMessage(data) {
@@ -102,7 +125,7 @@ async function sendMessage() {
     onOpen() {
       // 连接已建立
     },
-  })
+  }, selectedModel.value)
 }
 
 function cancelRequest() {
@@ -144,9 +167,24 @@ function clearHistory() {
         <div class="chat-header__title">AI 助手</div>
         <div class="chat-header__subtitle">智能问答 · 笔记管理</div>
       </div>
-      <el-button :icon="Delete" text @click="clearHistory" :disabled="messages.length === 0">
-        清空记录
-      </el-button>
+      <div class="chat-header__actions">
+        <el-select
+          v-model="selectedModel"
+          placeholder="选择模型"
+          :disabled="isLoading"
+          class="model-selector"
+        >
+          <el-option
+            v-for="m in models"
+            :key="m.modelId"
+            :label="m.modelName"
+            :value="m.modelId"
+          />
+        </el-select>
+        <el-button :icon="Delete" text @click="clearHistory" :disabled="messages.length === 0">
+          清空记录
+        </el-button>
+      </div>
     </div>
 
     <!-- 消息列表 -->
@@ -158,7 +196,10 @@ function clearHistory() {
       <div v-for="(msg, i) in messages" :key="i" :class="['chat-message', msg.role]">
         <div class="avatar">{{ msg.role === 'user' ? '我' : 'AI' }}</div>
         <div v-if="msg.role === 'user'" class="bubble">{{ msg.content }}</div>
-        <div v-else class="bubble markdown-body" v-html="renderMarkdown(msg.content)"></div>
+        <div v-else class="bubble markdown-body">
+          <div v-if="msg.modelName" class="model-tag">{{ msg.modelName }}</div>
+          <div v-html="renderMarkdown(msg.content)"></div>
+        </div>
       </div>
 
       <!-- 正在输入 -->
@@ -239,6 +280,24 @@ function clearHistory() {
     font-size: 13px;
     color: #999;
   }
+
+  &__actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+}
+
+.model-selector {
+  width: 160px;
+}
+
+.model-tag {
+  font-size: 11px;
+  color: #999;
+  margin-bottom: 6px;
+  padding-bottom: 4px;
+  border-bottom: 1px dashed #e0e0e0;
 }
 
 .chat-messages {

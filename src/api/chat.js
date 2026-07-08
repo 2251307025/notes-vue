@@ -4,10 +4,13 @@ import request from '@/util/request.js'
 
 export const deleteMemory = () => request.delete('/chat')
 
+// 获取可用模型列表
+export const getModels = () => request.get('/chat/models')
+
 // 根据提示词生成图片
 export const generateImage = (prompt) => request.post('/chat/image', { userInput: prompt })
 
-export function sendChatMessage(userInput, { onMessage, onError, onClose, onOpen }) {
+export function sendChatMessage(userInput, { onMessage, onError, onClose, onOpen }, modelId) {
   const tokenStore = useTokenStore()
 
   const ctrl = new AbortController()
@@ -18,7 +21,7 @@ export function sendChatMessage(userInput, { onMessage, onError, onClose, onOpen
       'Content-Type': 'application/json',
       'Authorization': tokenStore.token,
     },
-    body: JSON.stringify({ userInput }),
+    body: JSON.stringify({ userInput, modelId }),
     signal: ctrl.signal,
 
     onopen: async (response) => {
