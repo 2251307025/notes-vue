@@ -8,7 +8,8 @@ import {
   Crop,
   EditPen,
   SwitchButton,
-  CaretBottom
+  CaretBottom,
+  Collection
 } from '@element-plus/icons-vue'
 import avatar from '@/assets/default.png'
 import {userInfoService} from "@/api/user.js";
@@ -85,6 +86,10 @@ const handleCommand =(command)=>{
         <el-menu-item index="/article/manage">
           <el-icon><Promotion/></el-icon>
           <span>笔记管理</span>
+        </el-menu-item>
+        <el-menu-item index="/article/square">
+          <el-icon><Collection/></el-icon>
+          <span>笔记广场</span>
         </el-menu-item>
         <el-menu-item index="/ai/chat">
           <el-icon><ChatLineRound/></el-icon>

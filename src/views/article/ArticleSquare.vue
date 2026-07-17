@@ -1,25 +1,20 @@
 <script setup>
-import {
-  Edit,
-  Delete,
-  Search
-} from '@element-plus/icons-vue'
-
 import {ref, watch, onMounted, onUnmounted} from 'vue'
 import {useRouter} from 'vue-router'
+import {Search} from '@element-plus/icons-vue'
 
 const router = useRouter()
 
 //笔记分类数据模型
 const categorys = ref([])
 
+//搜索关键词
+const searchText = ref('')
+
 //用户搜索时选中的分类id
 const categoryId = ref('')
 
-//用户搜索时选中的发布状态
-const state = ref('')
-
-//关键词搜索
+//关键词搜索（跳转搜索结果页）
 const searchKeyword = ref('')
 
 //笔记列表数据模型
@@ -32,17 +27,8 @@ const lastId = ref(null)          // 游标值（最后一条笔记的id）
 const isFirstLoad = ref(true)     // 是否首次加载
 const sentinelRef = ref(null)     // 底部哨兵元素引用
 
-import {useTokenStore} from "@/stores/token.js";
-const tokenStore=useTokenStore();
-import {QuillEditor} from '@vueup/vue-quill'
-import '@vueup/vue-quill/dist/vue-quill.snow.css'
-import {
-  articleAddService,
-  articleCategoryListService,
-  articleDeleteService,
-  articleListService, articleUpdateService
-} from '@/api/artcle.js'
-import { generateImage } from '@/api/chat.js'
+import {articleCategoryListService, articlePublicListService} from '@/api/artcle.js'
+
 //回显笔记分类
 const articleCategoryList = async () => {
   let result = await articleCategoryListService()
@@ -60,7 +46,7 @@ const resolveCategoryName = (article) => {
   return ''
 }
 
-//加载笔记列表（支持无限滚动）
+//加载公共笔记列表（支持无限滚动）
 const loadArticles = async () => {
   if (loading.value || !hasMore.value) return
   loading.value = true
@@ -69,16 +55,16 @@ const loadArticles = async () => {
     const params = { pageSize: 10 }
 
     if (isFirstLoad.value) {
-      // 首次加载：使用偏移分页，拿到 total
+      // 首次加载：使用偏移分页
       params.pageNum = 1
       params.categoryId = categoryId.value ? categoryId.value : null
-      params.state = state.value ? state.value : null
+      params.data = searchText.value ? searchText.value : null
     } else {
       // 滚动加载：使用游标分页
       params.lastId = lastId.value
     }
 
-    const res = await articleListService(params)
+    const res = await articlePublicListService(params)
 
     if (isFirstLoad.value) {
       // 首次加载：替换列表
@@ -115,7 +101,7 @@ const resetAndLoad = () => {
 }
 
 //监听筛选条件变化
-watch([categoryId, state], () => {
+watch([categoryId], () => {
   resetAndLoad()
 })
 
@@ -143,120 +129,21 @@ onUnmounted(() => {
   }
 })
 
-import {Plus} from '@element-plus/icons-vue'
-//控制抽屉是否显示
-const visibleDrawer = ref(false)
-//查看抽屉
+//点击卡片查看
 const viewDrawerVisible = ref(false)
 const viewingArticle = ref(null)
-//添加表单数据模型
-const title =ref('')
-const articleModel = ref({
-  title: '',
-  categoryId: '',
-  coverImg: '',
-  content: '',
-  state: ''
-})
-//上传成功
-const uploadSuccess=(result)=>{
-  articleModel.value.coverImg=result.data;
-  console.log(result.data)
-}
-//添加
-import {ElMessage, ElMessageBox} from "element-plus";
-
-const clearArticleModel=()=>{
-  articleModel.value.content=''
-  articleModel.value.state=''
-  articleModel.value.coverImg=''
-  articleModel.value.title=''
-  articleModel.value.categoryId=''
-}
-const  addArticle=async (clickState) => {
-
-  articleModel.value.state = clickState;
-  let result = await articleAddService(articleModel.value)
- ElMessage.success(result.msg? result.msg:'添加成功')
-  visibleDrawer.value=false
-   await resetAndLoad()
-}
-
-// 生成封面图片
-const generatingImage = ref(false)
-const handleGenerateImage = async () => {
-  const content = articleModel.value.content
-  // 去除HTML标签后判断长度
-  const plainText = content.replace(/<[^>]+>/g, '').trim()
-  if (plainText.length < 5) {
-    ElMessage.warning('笔记内容至少需要5个文字才能生成封面')
-    return
-  }
-  generatingImage.value = true
-  try {
-    const imageUrl = await generateImage(plainText)
-    articleModel.value.coverImg = imageUrl.data || imageUrl
-    ElMessage.success('封面生成成功')
-  } catch (e) {
-    ElMessage.error('封面生成失败')
-  } finally {
-    generatingImage.value = false
-  }
-}
-//删除笔记
-const deleteArticle =(row)=>{
-  ElMessageBox.confirm(
-      '确定删除?',
-      '提示',
-      {
-        confirmButtonText: '确认',
-        cancelButtonText: '取消',
-        type: 'warning',
-      }
-  )
-      .then(async () => {
-        let result = await articleDeleteService(row.id);
-        ElMessage({
-          type: 'success',
-          message: '删除成功',
-        })
-        await resetAndLoad();
-      })
-      .catch(() => {
-        ElMessage({
-          type: 'info',
-          message: '取消删除',
-        })
-      })
-}
-const updateArticle=async (clickState) => {
-  articleModel.value.state = clickState;
-  let result = await articleUpdateService(articleModel.value)
-  ElMessage.success(result.msg ? result.msg : '修改成功')
-  await resetAndLoad()
-  visibleDrawer.value=false;
-}
-//笔记数据回调
-const showArticle=(row)=>{
-  articleModel.value.title=row.title;
-  articleModel.value.coverImg=row.coverImg;
-  articleModel.value.categoryId=row.categoryId;
-  articleModel.value.content=row.content
-  articleModel.value.id=row.id;
-}
-//点击卡片查看
 const handleCardClick = (article) => {
   viewingArticle.value = article
   viewDrawerVisible.value = true
 }
+
 // 跳转到搜索结果页
 const navigateToSearch = () => {
   if (!searchKeyword.value.trim()) {
-    ElMessage.warning('请输入搜索关键词')
     return
   }
   router.push({
-    path: '/article/manage/search',
+    path: '/article/square/search',
     query: { keyword: searchKeyword.value.trim() }
   })
 }
@@ -266,16 +153,16 @@ const navigateToSearch = () => {
   <el-card class="page-container">
     <template #header>
       <div class="header">
-        <span>笔记管理</span>
+        <span>笔记广场</span>
         <div class="extra">
-          <el-button type="primary" @click="visibleDrawer=true;title='添加笔记';clearArticleModel()">添加笔记</el-button>
+          <span class="subtitle">发现大家分享的优质笔记</span>
         </div>
       </div>
     </template>
     <!-- 搜索表单 -->
     <el-form inline class="demo-form-inline">
       <el-form-item label="笔记分类：">
-        <el-select placeholder="请选择" v-model="categoryId">
+        <el-select placeholder="请选择" v-model="categoryId" clearable>
           <el-option
               v-for="c in categorys"
               :key="c.id"
@@ -284,16 +171,18 @@ const navigateToSearch = () => {
           </el-option>
         </el-select>
       </el-form-item>
-
-      <el-form-item label="发布状态：">
-        <el-select placeholder="请选择" v-model="state">
-          <el-option label="已发布" value="已发布"></el-option>
-          <el-option label="草稿" value="草稿"></el-option>
-        </el-select>
+      <el-form-item label="关键词：">
+        <el-input
+            v-model="searchText"
+            placeholder="请输入关键词"
+            clearable
+            style="width: 220px"
+            @keyup.enter="resetAndLoad">
+        </el-input>
       </el-form-item>
       <el-form-item>
         <el-button type="primary" @click="resetAndLoad">搜索</el-button>
-        <el-button @click="categoryId='';state=''">重置</el-button>
+        <el-button @click="categoryId='';searchText=''">重置</el-button>
       </el-form-item>
     </el-form>
 
@@ -301,7 +190,7 @@ const navigateToSearch = () => {
     <div class="keyword-search">
       <el-input
           v-model="searchKeyword"
-          placeholder="输入关键词搜索笔记..."
+          placeholder="输入关键词搜索广场笔记..."
           clearable
           style="width: 320px"
           @keyup.enter="navigateToSearch">
@@ -319,19 +208,13 @@ const navigateToSearch = () => {
         <div class="card-overlay">
           <div class="card-top">
             <span class="card-title">{{ article.title }}</span>
-            <el-tag :type="article.state === '已发布' ? 'success' : 'info'" size="small" effect="dark">
-              {{ article.state }}
+            <el-tag type="success" size="small" effect="dark">
+              已发布
             </el-tag>
           </div>
           <div class="card-bottom">
             <span class="card-meta">{{ resolveCategoryName(article) }}</span>
             <span class="card-meta">{{ article.createTime.slice(0, 10) }}</span>
-            <div class="card-actions">
-              <el-button :icon="Edit" circle plain type="primary" size="small"
-                         @click.stop="visibleDrawer=true;title='编辑笔记';showArticle(article)"></el-button>
-              <el-button :icon="Delete" circle plain type="danger" size="small"
-                         @click.stop="deleteArticle(article)"></el-button>
-            </div>
           </div>
         </div>
       </div>
@@ -362,55 +245,10 @@ const navigateToSearch = () => {
       <div ref="sentinelRef" style="height: 1px"></div>
 
       <!-- 空状态 -->
-      <el-empty v-if="!loading && articles.length === 0" description="暂无笔记"/>
+      <el-empty v-if="!loading && articles.length === 0" description="暂无公共笔记"/>
     </div>
   </el-card>
-  <el-drawer v-model="visibleDrawer" :title=title  direction="rtl" size="50%">
-    <!-- 添加笔记表单 -->
-    <el-form :model="articleModel" label-width="100px">
-      <el-form-item label="笔记标题">
-        <el-input v-model="articleModel.title" placeholder="请输入标题"></el-input>
-      </el-form-item>
-      <el-form-item label="笔记分类">
-        <el-select placeholder="请选择" v-model="articleModel.categoryId">
-          <el-option v-for="c in categorys" :key="c.id" :label="c.categoryName" :value="c.id">
-          </el-option>
-        </el-select>
-      </el-form-item>
-      <el-form-item label="笔记封面">
-        <div class="cover-actions">
-          <el-upload class="avatar-uploader" :auto-upload="true" :show-file-list="false"
-                     action="/api/upload"
-                     name="file"
-                     :headers="{'Authorization':tokenStore.token}"
-                     :on-success="uploadSuccess"
-          >
-            <img v-if="articleModel.coverImg" :src="articleModel.coverImg" class="avatar"/>
-            <el-icon v-else class="avatar-uploader-icon">
-              <Plus/>
-            </el-icon>
-          </el-upload>
-          <el-button type="primary" :loading="generatingImage" @click="handleGenerateImage" style="margin-left: 12px;">
-            AI生成封面
-          </el-button>
-        </div>
-      </el-form-item>
-      <el-form-item label="笔记内容">
-        <div class="editor">
-          <quill-editor v-if="visibleDrawer"
-              theme="snow"
-              v-model:content="articleModel.content"
-              contentType="html"
-          >
-          </quill-editor>
-        </div>
-      </el-form-item>
-      <el-form-item>
-        <el-button type="primary" @click="title==='添加笔记'? addArticle('已发布'):updateArticle('已发布')">发布</el-button>
-        <el-button type="info" @click="title==='添加笔记'? addArticle('草稿'):updateArticle('草稿')">草稿</el-button>
-      </el-form-item>
-    </el-form>
-  </el-drawer>
+
   <!-- 查看笔记抽屉 -->
   <el-drawer v-model="viewDrawerVisible" :title="viewingArticle?.title || '查看笔记'" direction="rtl" size="50%">
     <div v-if="viewingArticle" class="view-article">
@@ -424,8 +262,8 @@ const navigateToSearch = () => {
         </div>
         <div class="info-row">
           <span class="info-label">状态</span>
-          <el-tag :type="viewingArticle.state === '已发布' ? 'success' : 'info'" size="small">
-            {{ viewingArticle.state }}
+          <el-tag type="success" size="small">
+            已发布
           </el-tag>
         </div>
         <div class="info-row">
@@ -447,6 +285,11 @@ const navigateToSearch = () => {
     display: flex;
     align-items: center;
     justify-content: space-between;
+
+    .subtitle {
+      font-size: 13px;
+      color: var(--el-text-color-secondary);
+    }
   }
 }
 
@@ -528,12 +371,6 @@ const navigateToSearch = () => {
       font-size: 12px;
       color: rgba(255, 255, 255, 0.8);
     }
-
-    .card-actions {
-      margin-left: auto;
-      display: flex;
-      gap: 6px;
-    }
   }
 }
 
@@ -596,49 +433,6 @@ const navigateToSearch = () => {
     font-size: 15px;
     line-height: 1.8;
     color: var(--el-text-color-primary);
-  }
-}
-
-.avatar-uploader {
-  :deep() {
-    .avatar {
-      width: 178px;
-      height: 178px;
-    }
-
-    .el-upload {
-      border: 1px dashed var(--el-border-color);
-      border-radius: 6px;
-      cursor: pointer;
-      position: relative;
-      overflow: hidden;
-      transition: var(--el-transition-duration-fast);
-    }
-
-    .el-upload:hover {
-      border-color: var(--el-color-primary);
-    }
-
-    .el-icon.avatar-uploader-icon {
-      font-size: 28px;
-      color: #8c939d;
-      width: 178px;
-      height: 178px;
-      text-align: center;
-    }
-  }
-}
-
-.cover-actions {
-  display: flex;
-  align-items: flex-end;
-}
-
-.editor {
-  width: 100%;
-
-  :deep(.ql-editor) {
-    min-height: 200px;
   }
 }
 </style>

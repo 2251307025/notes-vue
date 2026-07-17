@@ -22,6 +22,10 @@ export const articleCategoryDeleteService=(id)=>{
 export const articleListService=(params)=>{
   return  request.get('/article',{params: params})
 }
+//公共笔记列表查询（笔记广场）
+export const articlePublicListService=(params)=>{
+  return  request.get('/article/public',{params: params})
+}
 //添加笔记
 export const articleAddService=(articleData)=>{
   return   request.post('/article',articleData);
