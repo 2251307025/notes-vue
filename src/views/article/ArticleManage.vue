@@ -1,8 +1,7 @@
 <script setup>
 import {
   Edit,
-  Delete,
-  Search
+  Delete
 } from '@element-plus/icons-vue'
 
 import {ref, watch, onMounted, onUnmounted} from 'vue'
@@ -249,16 +248,16 @@ const handleCardClick = (article) => {
   viewingArticle.value = article
   viewDrawerVisible.value = true
 }
-// 跳转到搜索结果页
-const navigateToSearch = () => {
-  if (!searchKeyword.value.trim()) {
-    ElMessage.warning('请输入搜索关键词')
-    return
+// 关键词搜索：关键词非空跳转搜索结果页，为空则在当前页按分类/状态筛选
+const handleKeywordSearch = () => {
+  if (searchKeyword.value.trim()) {
+    router.push({
+      path: '/article/manage/search',
+      query: { keyword: searchKeyword.value.trim() }
+    })
+  } else {
+    resetAndLoad()
   }
-  router.push({
-    path: '/article/manage/search',
-    query: { keyword: searchKeyword.value.trim() }
-  })
 }
 </script>
 
@@ -291,25 +290,20 @@ const navigateToSearch = () => {
           <el-option label="草稿" value="草稿"></el-option>
         </el-select>
       </el-form-item>
+      <el-form-item label="关键词搜索：">
+        <el-input
+            v-model="searchKeyword"
+            placeholder="请输入关键词"
+            clearable
+            style="width: 220px"
+            @keyup.enter="handleKeywordSearch">
+        </el-input>
+      </el-form-item>
       <el-form-item>
-        <el-button type="primary" @click="resetAndLoad">搜索</el-button>
-        <el-button @click="categoryId='';state=''">重置</el-button>
+        <el-button type="primary" @click="handleKeywordSearch">搜索</el-button>
+        <el-button @click="categoryId='';state='';searchKeyword=''">重置</el-button>
       </el-form-item>
     </el-form>
-
-    <!-- 关键词搜索跳转 -->
-    <div class="keyword-search">
-      <el-input
-          v-model="searchKeyword"
-          placeholder="输入关键词搜索笔记..."
-          clearable
-          style="width: 320px"
-          @keyup.enter="navigateToSearch">
-        <template #append>
-          <el-button type="primary" @click="navigateToSearch" :icon="Search">搜索</el-button>
-        </template>
-      </el-input>
-    </div>
 
     <!-- 笔记网格（3列无限滚动） -->
     <div class="article-grid">
@@ -452,12 +446,6 @@ const navigateToSearch = () => {
 
 .demo-form-inline .el-select {
   --el-select-width: 220px;
-}
-
-.keyword-search {
-  margin-top: 12px;
-  padding-top: 12px;
-  border-top: 1px dashed var(--el-border-color-lighter);
 }
 
 .article-grid {

@@ -1,15 +1,11 @@
 <script setup>
 import {ref, watch, onMounted, onUnmounted} from 'vue'
 import {useRouter} from 'vue-router'
-import {Search} from '@element-plus/icons-vue'
 
 const router = useRouter()
 
 //笔记分类数据模型
 const categorys = ref([])
-
-//搜索关键词
-const searchText = ref('')
 
 //用户搜索时选中的分类id
 const categoryId = ref('')
@@ -58,7 +54,6 @@ const loadArticles = async () => {
       // 首次加载：使用偏移分页
       params.pageNum = 1
       params.categoryId = categoryId.value ? categoryId.value : null
-      params.data = searchText.value ? searchText.value : null
     } else {
       // 滚动加载：使用游标分页
       params.lastId = lastId.value
@@ -137,15 +132,16 @@ const handleCardClick = (article) => {
   viewDrawerVisible.value = true
 }
 
-// 跳转到搜索结果页
-const navigateToSearch = () => {
-  if (!searchKeyword.value.trim()) {
-    return
+// 关键词搜索：关键词非空跳转搜索结果页，为空则在当前页按分类筛选
+const handleKeywordSearch = () => {
+  if (searchKeyword.value.trim()) {
+    router.push({
+      path: '/article/square/search',
+      query: { keyword: searchKeyword.value.trim() }
+    })
+  } else {
+    resetAndLoad()
   }
-  router.push({
-    path: '/article/square/search',
-    query: { keyword: searchKeyword.value.trim() }
-  })
 }
 </script>
 
@@ -171,34 +167,20 @@ const navigateToSearch = () => {
           </el-option>
         </el-select>
       </el-form-item>
-      <el-form-item label="关键词：">
+      <el-form-item label="关键词搜索：">
         <el-input
-            v-model="searchText"
+            v-model="searchKeyword"
             placeholder="请输入关键词"
             clearable
             style="width: 220px"
-            @keyup.enter="resetAndLoad">
+            @keyup.enter="handleKeywordSearch">
         </el-input>
       </el-form-item>
       <el-form-item>
-        <el-button type="primary" @click="resetAndLoad">搜索</el-button>
-        <el-button @click="categoryId='';searchText=''">重置</el-button>
+        <el-button type="primary" @click="handleKeywordSearch">搜索</el-button>
+        <el-button @click="categoryId='';searchKeyword=''">重置</el-button>
       </el-form-item>
     </el-form>
-
-    <!-- 关键词搜索跳转 -->
-    <div class="keyword-search">
-      <el-input
-          v-model="searchKeyword"
-          placeholder="输入关键词搜索广场笔记..."
-          clearable
-          style="width: 320px"
-          @keyup.enter="navigateToSearch">
-        <template #append>
-          <el-button type="primary" @click="navigateToSearch" :icon="Search">搜索</el-button>
-        </template>
-      </el-input>
-    </div>
 
     <!-- 笔记网格（3列无限滚动） -->
     <div class="article-grid">
@@ -295,12 +277,6 @@ const navigateToSearch = () => {
 
 .demo-form-inline .el-select {
   --el-select-width: 220px;
-}
-
-.keyword-search {
-  margin-top: 12px;
-  padding-top: 12px;
-  border-top: 1px dashed var(--el-border-color-lighter);
 }
 
 .article-grid {
